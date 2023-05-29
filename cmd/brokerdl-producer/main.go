@@ -2,42 +2,35 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"io"
-	"log"
+	"encoding/json"
+	"os"
 
-	"github.com/BurntSushi/toml"
 	brokerdl "github.com/adityaxdiwakar/broker-dl"
-	"github.com/nxadm/tail"
 	"github.com/segmentio/kafka-go"
 )
 
-var conf tomlConfig
-
-func init() {
-	if _, err := toml.DecodeFile("config.toml", &conf); err != nil {
-		log.Fatalf("error: could not parse configuration: %v\n", err)
-	}
+type DownloadNotification struct {
+	Hash     string `json:"info_hash"`
+	Name     string `json:"name"`
+	Location string `json:"location"`
 }
 
 func main() {
-	writer := brokerdl.GetKafkaWriter(conf.KafkaUrl)
+	notification := DownloadNotification{
+		Hash:     os.Args[2],
+		Name:     os.Args[3],
+		Location: os.Args[4],
+	}
+
+	b, err := json.Marshal(notification)
+	if err != nil {
+		os.Exit(1)
+	}
+
+	writer := brokerdl.GetKafkaWriter(os.Args[1])
 	ctx := context.Background()
 
-	t, err := tail.TailFile("log.txt", tail.Config{
-		Follow: true,
-		Location: &tail.SeekInfo{
-			Whence: io.SeekEnd,
-		},
+	writer.WriteMessages(ctx, kafka.Message{
+		Value: []byte(string(b)),
 	})
-	if err != nil {
-		log.Fatalf("error: could not open file to tail from: %v\n", err)
-	}
-
-	fmt.Println("Starting producing...")
-	for line := range t.Lines {
-		writer.WriteMessages(ctx, kafka.Message{
-			Value: []byte(line.Text),
-		})
-	}
 }
