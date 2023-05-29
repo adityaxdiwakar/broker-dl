@@ -20,7 +20,7 @@ func init() {
 func main() {
 	r := brokerdl.GetKafkaReader(conf.KafkaUrl)
 
-	fmt.Println("Starting processing...")
+	fmt.Println("Starting consuming...")
 	ctx := context.Background()
 	for {
 		m, err := r.FetchMessage(ctx)
