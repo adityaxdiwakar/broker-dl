@@ -4,6 +4,12 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+type DownloadNotification struct {
+	Hash     string `json:"info_hash"`
+	Name     string `json:"name"`
+	Location string `json:"location"`
+}
+
 func GetKafkaReader(server string) *kafka.Reader {
 	return kafka.NewReader(kafka.ReaderConfig{
 		Brokers:   []string{server},

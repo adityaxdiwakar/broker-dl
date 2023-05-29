@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"os/exec"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 	brokerdl "github.com/adityaxdiwakar/broker-dl"
@@ -17,6 +20,20 @@ func init() {
 	}
 }
 
+func genRemoteExec(location, name string) string {
+	name = strings.ReplaceAll(name, " ", "\\ ")
+
+	remoteLoc := fmt.Sprintf("sftp://%s:%s@%s%s/%s",
+		conf.RemoteDetails.Username, conf.RemoteDetails.Password,
+		conf.RemoteDetails.Host, location, name)
+
+	if strings.HasSuffix(name, "mkv") {
+		return fmt.Sprintf("pget -n %d -c %s", conf.NumThreads, remoteLoc)
+	}
+
+	return fmt.Sprintf("mirror --use-pget-n=%d -c %s", conf.NumThreads, remoteLoc)
+}
+
 func main() {
 	r := brokerdl.GetKafkaReader(conf.KafkaUrl)
 
@@ -28,9 +45,23 @@ func main() {
 			break
 		}
 
-		fmt.Printf("message at topic/partition/offset %v/%v/%v: %s = %s\n",
-			m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
+		var notification brokerdl.DownloadNotification
+		json.Unmarshal(m.Value, &notification)
 
+		fmt.Printf("Processing file %s\n", notification.Name)
+
+		/* remote command to execute for transfer */
+		remoteCommand := genRemoteExec(notification.Location, notification.Name)
+
+		/* begin transfer and wait for completion */
+		cmd := exec.Command("lftp", "-c", remoteCommand)
+		err = cmd.Run()
+		if err != nil {
+			fmt.Printf("Skipping %s due to failure\n", notification.Name)
+			continue
+		}
+
+		fmt.Printf("Marked %s as completed\n", notification.Name)
 		r.CommitMessages(ctx, m)
 	}
 }

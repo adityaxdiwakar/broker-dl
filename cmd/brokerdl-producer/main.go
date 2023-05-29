@@ -9,14 +9,8 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-type DownloadNotification struct {
-	Hash     string `json:"info_hash"`
-	Name     string `json:"name"`
-	Location string `json:"location"`
-}
-
 func main() {
-	notification := DownloadNotification{
+	notification := brokerdl.DownloadNotification{
 		Hash:     os.Args[2],
 		Name:     os.Args[3],
 		Location: os.Args[4],
