@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -55,9 +56,17 @@ func main() {
 
 		/* begin transfer and wait for completion */
 		cmd := exec.Command("lftp", "-c", remoteCommand)
+		cmd.Dir = conf.Locations.Incompletes
 		err = cmd.Run()
 		if err != nil {
-			fmt.Printf("Skipping %s due to failure\n", notification.Name)
+			fmt.Printf("Skipping %s due to download failure\n", notification.Name)
+			continue
+		}
+
+		from := fmt.Sprintf("%s%s", conf.Locations.Incompletes, notification.Name)
+		to := fmt.Sprintf("%s%s", conf.Locations.Completes, notification.Name)
+		if err = os.Rename(from, to); err != nil {
+			fmt.Printf("Skipping %s due to move failure\n", notification.Name)
 			continue
 		}
 
