@@ -1,6 +1,6 @@
 # broker-dl
 
-`broker-dl` is a Kafka-based download notification system.
+`broker-dl` is a Kafka-based download thru notification system using LFTP.
 
 ## Use Case
 The typical use case of `broker-dl` is where one has a server receiving files (usually used as a high-speed cache in a datacenter) that must be synced (upon some criteria) to a local server (possibly through a configurable proxy). Files should not be considered transferred in the case of local server being offline, proxy being offline, or local server partially completing a download and failing (intermittent network failure, power failure, etc). Hence, Kafka is utilized as a message broker to send/receive notifications.
