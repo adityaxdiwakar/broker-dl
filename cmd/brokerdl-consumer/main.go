@@ -32,17 +32,22 @@ func genRemoteExec(location, name string) string {
 		return fmt.Sprintf("pget -n %d -c %s", conf.NumThreads, remoteLoc)
 	}
 
-	return fmt.Sprintf("mirror --use-pget-n=%d -c %s", conf.NumThreads, remoteLoc)
+	return fmt.Sprintf("mirror --use-pget-n=%d -p -c %s", conf.NumThreads, remoteLoc)
 }
 
 func main() {
 	r := brokerdl.GetKafkaReader(conf.KafkaUrl)
 
 	fmt.Println("Starting consuming...")
+	if conf.DebugLevel == "debug" {
+		fmt.Println("Debug logging enabled.")
+	}
+
 	ctx := context.Background()
 	for {
 		m, err := r.FetchMessage(ctx)
 		if err != nil {
+			fmt.Println(err)
 			break
 		}
 
@@ -57,6 +62,10 @@ func main() {
 		/* begin transfer and wait for completion */
 		cmd := exec.Command("lftp", "-c", remoteCommand)
 		cmd.Dir = conf.Locations.Incompletes
+
+		if conf.DebugLevel == "debug" {
+			fmt.Printf("Executing %s\n", cmd.String())
+		}
 		err = cmd.Run()
 		if err != nil {
 			fmt.Printf("Skipping %s due to download failure\n", notification.Name)
