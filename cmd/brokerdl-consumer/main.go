@@ -23,7 +23,7 @@ func init() {
 
 func genRemoteExec(location, name string) string {
 	name = strings.ReplaceAll(name, " ", "\\ ")
-	name = strings.ReplaceAll(name, "'", "\'")
+	name = strings.ReplaceAll(name, "'", "\\'")
 
 	remoteLoc := fmt.Sprintf("sftp://%s:%s@%s%s/%s",
 		conf.RemoteDetails.Username, conf.RemoteDetails.Password,
